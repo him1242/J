@@ -1,0 +1,723 @@
+openapi: 3.0.0
+info:
+  title: JHC
+  version: '1.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /login:
+    parameters: []
+    post:
+      summary: Login
+      operationId: login
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                example-1:
+                  value:
+                    id: JHC00001
+                    firstName: Tai Man
+                    lastName: Chan
+                    title: Mr
+                    email: Testing@gmail.com
+                    mobilePrefix: 852
+                    mobileNumber: 91234567
+                    password: '3'
+                    perferedLanguage: string
+                    facebookId: string
+                    gmaileId: string
+                    wechatId: string
+                    deliveryAddress:
+                      - firstname: David
+                        lastname: Lee
+                        phonenum: '98998991'
+                        email: testingdelivery@gmail.com
+                        district: 'Eastern, Yau Tsim Mong'
+                        region: 'Wan Chai, Aberdeen'
+                        'room ': '09'
+                        floor: '22'
+                        block: A
+                        building: Super Building
+                        estate: Happy Estate
+                        street: Testing Street
+                        streetnum: '17'
+                        defaultAddress: false
+                    brithdayMonth: 1
+                    octopusNumber: 123456789
+                    homepassNumber: string
+      description: Use user ID (Email/Phone/MemberID) and encrypted password for login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: Email/Phone Number/Member ID
+                encryptedPassword:
+                  type: string
+                  description: MD5 encrypted password
+              required:
+                - id
+                - encryptedPassword
+            examples:
+              Email login:
+                value:
+                  id: testing@gmail.com
+                  encryptedPassword: joi32oijoi32mo2kp3poasc3ceececceecsddcc3oko3ko3klklklklkcl
+              Phone login:
+                value:
+                  id: '85281234567'
+                  encryptedPassword: joi32oijoi32mo2kp3poasc3ceececceecsddcc3oko3ko3klklklklkcl
+              Member ID:
+                value:
+                  id: JHV210799999999
+                  encryptedPassword: joi32oijoi32mo2kp3poasc3ceececceecsddcc3oko3ko3klklklklkcl
+        description: ''
+  /register:
+    post:
+      summary: Register
+      operationId: post-user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '':
+                    $ref: '#/components/schemas/User'
+              examples:
+                example-1:
+                  value:
+                    '':
+                      id: JHC00001
+                      firstName: Tai Man
+                      lastName: Chan
+                      title: Mr
+                      email: Testing@gmail.com
+                      mobilePrefix: 852
+                      mobileNumber: 91234567
+                      password: '3'
+                      perferedLanguage: string
+                      facebookId: string
+                      gmailId: string
+                      wechatId: string
+                      deliveryAddress:
+                        - firstname: David
+                          lastname: Lee
+                          phonenum: '98998991'
+                          email: testingdelivery@gmail.com
+                          district: 'Eastern, Yau Tsim Mong'
+                          region: 'Wan Chai, Aberdeen'
+                          'room ': '09'
+                          floor: '22'
+                          block: A
+                          building: Super Building
+                          estate: Happy Estate
+                          street: Testing Street
+                          streetnum: '17'
+                          defaultAddress: false
+                      brithdayMonth: 1
+                      octopusNumber: 123456789
+                      homepassNumber: string
+        '400':
+          description: Missing Required Information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                Verification Not Matched:
+                  value:
+                    response:
+                      fieldMessages:
+                        - field: verificationCode
+                          message: Verification Code not match
+                Email Duplicate:
+                  value:
+                    response:
+                      fieldMessages:
+                        - field: email
+                          message: Email duplicated
+                Mobile Number Duplicate:
+                  value:
+                    response:
+                      fieldMessages:
+                        - field: mobileNumber
+                          message: Mobile number duplicated
+                Multiple field duplicated:
+                  value:
+                    response:
+                      fieldMessages:
+                        - field: verificationCode
+                          message: Verification Code not match
+                        - field: email
+                          message: Email duplicated
+                        - field: mobileNumber
+                          message: Mobile number duplicated
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                profile:
+                  $ref: '#/components/schemas/User'
+                verificationCode:
+                  type: number
+            examples:
+              example-1:
+                value:
+                  profile:
+                    id: JHC00001
+                    firstName: Tai Man
+                    lastName: Chan
+                    title: Mr
+                    email: Testing@gmail.com
+                    mobilePrefix: 852
+                    mobileNumber: 91234567
+                    password: string
+                    perferedLanguage: string
+                    facebookId: string
+                    gmailId: string
+                    wechatId: string
+                    brithdayMonth: 1
+                    octopusNumber: 123456789
+                    homepassNumber: string
+                  verificationCode: 123232
+        description: Post the necessary fields for the API to create a new user.
+      description: Register for a new customer account
+    parameters: []
+  /sendActivationCode:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                example-1:
+                  value:
+                    errors:
+                      fieldMessages:
+                        - field: phoneNumber
+                          message: >-
+                            This number has exceeded SMS messages limit, please
+                            try again after 30 minutes
+      operationId: get-sendActivationCode
+      description: Send verification code to customer via SMS for verification
+      parameters:
+        - schema:
+            type: number
+          in: query
+          name: phoneNumber
+          description: phone number to receive SMS
+        - schema:
+            type: string
+          in: query
+          name: phonePrefix
+          description: phone prefix to receive SMS
+  /getCustomerProfile:
+    get:
+      summary: Get Customer Profile
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                Sample User Profile:
+                  value:
+                    id: JHC00001
+                    firstName: Tai Man
+                    lastName: Chan
+                    title: Mr
+                    email: Testing@gmail.com
+                    mobilePrefix: 852
+                    mobileNumber: 91234567
+                    password: string
+                    perferedLanguage: string
+                    facebookId: string
+                    gmailId: string
+                    wechatId: string
+                    deliveryAddress:
+                      - firstname: David
+                        lastname: Lee
+                        phonenum: '98998991'
+                        email: testingdelivery@gmail.com
+                        district: 'Eastern, Yau Tsim Mong'
+                        region: 'Wan Chai, Aberdeen'
+                        'room ': '09'
+                        floor: '22'
+                        block: A
+                        building: Super Building
+                        estate: Happy Estate
+                        street: Testing Street
+                        streetnum: '17'
+                        defaultAddress: false
+                    brithdayMonth: 1
+                    octopusNumber: 123456789
+                    homepassNumber: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                'Customer not found ':
+                  value:
+                    fieldMessages:
+                      - field: id
+                        message: Member id not found
+      operationId: get-getCustomerProfile
+      description: Retrieve customer profile include social media ID - social media mapping
+      parameters:
+        - schema:
+            type: string
+            example: '85268899998'
+          in: query
+          name: id
+          description: Email/Phone/MemberID
+          required: true
+  /updateCustomerProfile:
+    post:
+      summary: ''
+      operationId: post-updateCustomerProfile
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                example-1:
+                  value:
+                    id: JHC00001
+                    firstName: Tai Man
+                    lastName: Chan
+                    title: Mr
+                    email: Testing@gmail.com
+                    mobilePrefix: 852
+                    mobileNumber: 91234567
+                    password: string
+                    perferedLanguage: string
+                    facebookId: string
+                    gmailId: string
+                    wechatId: string
+                    deliveryAddress:
+                      - firstname: David
+                        lastname: Lee
+                        phonenum: '98998991'
+                        email: testingdelivery@gmail.com
+                        district: 'Eastern, Yau Tsim Mong'
+                        region: 'Wan Chai, Aberdeen'
+                        'room ': '09'
+                        floor: '22'
+                        block: A
+                        building: Super Building
+                        estate: Happy Estate
+                        street: Testing Street
+                        streetnum: '17'
+                        defaultAddress: false
+                    brithdayMonth: 1
+                    octopusNumber: 123456789
+                    homepassNumber: string
+        '400':
+          description: Bad Request
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                example-1:
+                  value:
+                    fieldMessages:
+                      - field: id
+                        message: Member not existed
+      description: 'Update customer profile, social media ID '
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+            examples:
+              Update Sample Profile:
+                value:
+                  id: JHC00001
+                  firstName: Tai Man
+                  lastName: Chan
+                  title: Mr
+                  email: Testing@gmail.com
+                  mobilePrefix: 852
+                  mobileNumber: 91234567
+                  password: string
+                  perferedLanguage: string
+                  facebookId: string
+                  gmailId: string
+                  wechatId: string
+                  deliveryAddress:
+                    - firstname: David
+                      lastname: Lee
+                      phonenum: '98998991'
+                      email: testingdelivery@gmail.com
+                      district: 'Eastern, Yau Tsim Mong'
+                      region: 'Wan Chai, Aberdeen'
+                      'room ': '09'
+                      floor: '22'
+                      block: A
+                      building: Super Building
+                      estate: Happy Estate
+                      street: Testing Street
+                      streetnum: '17'
+                      defaultAddress: false
+                  brithdayMonth: 1
+                  octopusNumber: 123456789
+                  homepassNumber: string
+  /forgotPassword:
+    post:
+      summary: Forgot password
+      operationId: post-forgotPassword
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 'Member not existed  '
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                Email not existed:
+                  value:
+                    fieldMessages:
+                      - field: email
+                        message: Email not existed
+                Mobile number not existed:
+                  value:
+                    fieldMessages:
+                      - field: mobileNumber
+                        message: Mobile number not existed
+        '500':
+          description: Internal Server Error
+      description: >-
+        Request reset password, send a verification code to customer via
+        SMS/Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: testing@gmail.com
+                mobileNumber:
+                  type: number
+                  example: 81234567
+            examples:
+              Forgot Password  by Email:
+                value:
+                  email: testing@gmail.com
+              Forgot Password by mobile number:
+                value:
+                  mobileNumber: 81234567
+        description: Either filled mobileNumber or email field
+  /resetPassword:
+    post:
+      summary: ''
+      operationId: post-resetPassword
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                Email not existed:
+                  value:
+                    fieldMessages:
+                      - field: email
+                        message: Email not existed
+                Verification Code incorrect:
+                  value:
+                    fieldMessages:
+                      - field: verificationCode
+                        message: Verification Code incorrect
+                Mobile number not existed:
+                  value:
+                    fieldMessages:
+                      - field: mobileNumber
+                        message: mobileNumber not existed
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: testing@gmail.com
+                mobileNumber:
+                  type: number
+                  description: Mobile prefix append with number
+                  example: 85265645521
+                password:
+                  type: string
+                  description: MD5 encrypted password
+                  example: asfasfsagfdsrhsfdbfdbfdbfbfrb2
+                verificationCode:
+                  type: number
+                  example: 928942
+            examples:
+              Reset password by email:
+                value:
+                  email: testing@gmail.com
+                  password: asfasfsagfdsrhsfdbfdbfdbfbfrb2
+                  verificationCode: 928942
+              Reset password by mobile number:
+                value:
+                  mobileNumber: 85265645521
+                  password: asfasfsagfdsrhsfdbfdbfdbfbfrb2
+                  verificationCode: 928942
+components:
+  schemas:
+    User:
+      type: object
+      title: JHCMember
+      description: JHC Member's Profile
+      x-examples:
+        Sample Account:
+          id: JHC00001
+          firstName: Tai Man
+          lastName: Chan
+          title: Mr
+          email: Testing@gmail.com
+          mobilePrefix: 852
+          mobileNumber: 91234567
+          password: '3'
+          perferedLanguage: string
+          facebookId: string
+          gmaileId: string
+          wechatId: string
+          deliveryAddress:
+            - firstname: David
+              lastname: Lee
+              phonenum: '98998991'
+              email: testingdelivery@gmail.com
+              district: 'Eastern, Yau Tsim Mong'
+              region: 'Wan Chai, Aberdeen'
+              'room ': '09'
+              floor: '22'
+              block: A
+              building: Super Building
+              estate: Happy Estate
+              street: Testing Street
+              streetnum: '17'
+              defaultAddress: true
+            - firstname: Tony
+              lastname: Wan
+              phonenum: '98998991'
+              email: testingdelivery@gmail.com
+              district: 'Eastern, Yau Tsim Mong'
+              region: 'Wan Chai, Aberdeen'
+              'room ': '22'
+              floor: '1'
+              block: C
+              building: Super Building2
+              estate: Happy Estate2
+              street: Testing Street2
+              streetnum: '12'
+              defaultAddress: false
+          brithdayMonth: 1
+          octopusNumber: 123456789
+          homepassNumber: string
+      properties:
+        id:
+          type: string
+          description: >-
+            Unique identifier for the given JHCMember, use for link with User
+            Model in SAP Commerece.
+          example: JHC00001
+          readOnly: true
+        firstName:
+          type: string
+          description: Member's full name
+          example: Tai Man
+        lastName:
+          type: string
+          example: Chan
+        title:
+          type: string
+          enum:
+            - Mr
+            - Mrs
+            - Ms
+        email:
+          type: string
+          format: email
+          example: Testing@gmail.com
+          description: Member's Email
+        mobilePrefix:
+          type: number
+          description: Member's Phone number prefix
+          enum:
+            - '852'
+            - '853'
+            - '86'
+          example: 852
+          default: 852
+        mobileNumber:
+          type: number
+          example: 91234567
+        password:
+          type: string
+          description: Password encrypted by MD5
+        perferedLanguage:
+          type: string
+        facebookId:
+          type: string
+          description: For facebook login
+        gmailId:
+          type: string
+          description: For gmail login
+        wechatId:
+          type: string
+          description: For wechat login
+        deliveryAddress:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliveryAddress'
+        brithdayMonth:
+          type: number
+          minimum: 1
+          maximum: 12
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 6
+            - 7
+            - 8
+            - 9
+            - 10
+            - 11
+            - 12
+        octopusNumber:
+          type: number
+          default: 0
+          example: 123456789
+          description: To link with Octopus Card
+        homepassNumber:
+          type: string
+          description: To link with the physical Home Pass Card
+      required:
+        - id
+        - firstName
+        - lastName
+        - title
+        - password
+      readOnly: true
+    DeliveryAddress:
+      title: DeliveryAddress
+      type: object
+      properties:
+        firstname:
+          type: string
+          example: David
+        lastname:
+          type: string
+          example: Lee
+        phonenum:
+          type: string
+          example: '98998991'
+        email:
+          type: string
+          example: testingdelivery@gmail.com
+        district:
+          type: string
+          example: 'Eastern, Yau Tsim Mong'
+        region:
+          type: string
+          example: 'Wan Chai, Aberdeen'
+        'room ':
+          type: string
+          example: '09'
+        floor:
+          type: string
+          example: '22'
+        block:
+          type: string
+          example: A
+        building:
+          type: string
+          example: Super Building
+        estate:
+          type: string
+          example: Happy Estate
+        street:
+          type: string
+          example: Testing Street
+        streetnum:
+          type: string
+          example: '17'
+        defaultAddress:
+          type: boolean
+          default: false
+      required:
+        - firstname
+        - lastname
+        - phonenum
+        - email
+        - district
+        - region
+        - defaultAddress
+    ErrorMessage:
+      title: ErrorMessage
+      type: object
+      x-examples: {}
+      properties:
+        fieldMessages:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+  responses: {}
