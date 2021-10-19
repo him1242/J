@@ -51,6 +51,23 @@ paths:
                     brithdayMonth: 1
                     octopusNumber: 123456789
                     homepassNumber: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User Not Found:
+                  value:
+                    fieldMessages:
+                      - field: id
+                        message: user not found
+                Password incorrect:
+                  value:
+                    fieldMessages:
+                      - field: encryptedPassword
+                        message: Password incorrected
       description: Use user ID (Email/Phone/MemberID) and encrypted password for login
       requestBody:
         content:
@@ -61,6 +78,7 @@ paths:
                 id:
                   type: string
                   example: Email/Phone Number/Member ID
+                  description: Email/Mobile Number/JFun ID
                 encryptedPassword:
                   type: string
                   description: MD5 encrypted password
@@ -134,39 +152,34 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  response:
-                    $ref: '#/components/schemas/ErrorMessage'
+                $ref: '#/components/schemas/ErrorMessage'
               examples:
                 Verification Not Matched:
                   value:
-                    response:
-                      fieldMessages:
-                        - field: verificationCode
-                          message: Verification Code not match
+                    fieldMessages:
+                      - field: verificationCode
+                        message: Verification Code not match
                 Email Duplicate:
                   value:
-                    response:
-                      fieldMessages:
-                        - field: email
-                          message: Email duplicated
+                    fieldMessages:
+                      - field: email
+                        message: Email duplicated
                 Mobile Number Duplicate:
                   value:
-                    response:
-                      fieldMessages:
-                        - field: mobileNumber
-                          message: Mobile number duplicated
+                    fieldMessages:
+                      - field: mobileNumber
+                        message: Mobile number duplicated
                 Multiple field duplicated:
                   value:
-                    response:
-                      fieldMessages:
-                        - field: verificationCode
-                          message: Verification Code not match
-                        - field: email
-                          message: Email duplicated
-                        - field: mobileNumber
-                          message: Mobile number duplicated
+                    fieldMessages:
+                      - field: verificationCode
+                        message: Verification Code not match
+                      - field: email
+                        message: Email duplicated
+                      - field: mobileNumber
+                        message: Mobile number duplicated
+        '500':
+          description: Internal Server Error
       requestBody:
         content:
           application/json:
@@ -177,6 +190,10 @@ paths:
                   $ref: '#/components/schemas/User'
                 verificationCode:
                   type: number
+                  description: Verification code received via SMS
+              required:
+                - profile
+                - verificationCode
             examples:
               example-1:
                 value:
@@ -202,7 +219,7 @@ paths:
     parameters: []
   /sendActivationCode:
     get:
-      summary: Your GET endpoint
+      summary: Send Activation Code
       tags: []
       responses:
         '200':
@@ -212,32 +229,38 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  errors:
-                    $ref: '#/components/schemas/ErrorMessage'
+                $ref: '#/components/schemas/ErrorMessage'
               examples:
                 example-1:
                   value:
-                    errors:
-                      fieldMessages:
-                        - field: phoneNumber
-                          message: >-
-                            This number has exceeded SMS messages limit, please
-                            try again after 30 minutes
+                    fieldMessages:
+                      - field: phoneNumber
+                        message: >-
+                          This number has exceeded SMS messages limit, please
+                          try again after 30 minutes
+        '500':
+          description: Internal Server Error
       operationId: get-sendActivationCode
       description: Send verification code to customer via SMS for verification
       parameters:
         - schema:
             type: number
+            example: 89876542
           in: query
           name: phoneNumber
           description: phone number to receive SMS
+          required: true
         - schema:
-            type: string
+            type: number
+            example: '852'
+            enum:
+              - '852'
+              - '86'
+              - '853'
           in: query
           name: phonePrefix
           description: phone prefix to receive SMS
+          required: true
   /getCustomerProfile:
     get:
       summary: Get Customer Profile
@@ -294,6 +317,8 @@ paths:
                     fieldMessages:
                       - field: id
                         message: Member id not found
+        '500':
+          description: Internal Server Error
       operationId: get-getCustomerProfile
       description: Retrieve customer profile include social media ID - social media mapping
       parameters:
@@ -306,8 +331,8 @@ paths:
           required: true
   /updateCustomerProfile:
     post:
-      summary: ''
-      operationId: post-updateCustomerProfile
+      summary: Update Customer Profile
+      operationId: Update Customer Profile
       responses:
         '200':
           description: OK
@@ -361,6 +386,8 @@ paths:
                     fieldMessages:
                       - field: id
                         message: Member not existed
+        '500':
+          description: Internal Server Error
       description: 'Update customer profile, social media ID '
       requestBody:
         content:
@@ -440,9 +467,13 @@ paths:
                   type: string
                   format: email
                   example: testing@gmail.com
+                  description: Email to receive password reset verification code
                 mobileNumber:
                   type: number
-                  example: 81234567
+                  example: 85265645521
+                  description: >-
+                    Mobile number to receive password reset verification code,
+                    the mobile number must be started from +852
             examples:
               Forgot Password  by Email:
                 value:
@@ -453,7 +484,7 @@ paths:
         description: Either filled mobileNumber or email field
   /resetPassword:
     post:
-      summary: ''
+      summary: Reset Password
       operationId: post-resetPassword
       responses:
         '200':
@@ -480,6 +511,8 @@ paths:
                     fieldMessages:
                       - field: mobileNumber
                         message: mobileNumber not existed
+        '500':
+          description: Internal Server Error
       requestBody:
         content:
           application/json:
@@ -490,17 +523,24 @@ paths:
                   type: string
                   format: email
                   example: testing@gmail.com
+                  description: Email entered in forgot password step.
                 mobileNumber:
                   type: number
-                  description: Mobile prefix append with number
+                  description: >-
+                    Mobile entered in forgot password step, mobile number that
+                    must be started from +852
                   example: 85265645521
                 password:
                   type: string
-                  description: MD5 encrypted password
+                  description: 'New password with MD5 encrypted '
                   example: asfasfsagfdsrhsfdbfdbfdbfbfrb2
                 verificationCode:
                   type: number
                   example: 928942
+                  description: Verification Code Received
+              required:
+                - password
+                - verificationCode
             examples:
               Reset password by email:
                 value:
@@ -512,6 +552,894 @@ paths:
                   mobileNumber: 85265645521
                   password: asfasfsagfdsrhsfdbfdbfdbfbfrb2
                   verificationCode: 928942
+        description: >-
+          Reset password using email/mobile number entered in the forgot
+          password step.
+  /socialMediaLogin:
+    post:
+      summary: Social Media Login
+      operationId: post-socialMediaLogin
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                Sample user:
+                  value:
+                    id: JHC00001
+                    firstName: Tai Man
+                    lastName: Chan
+                    title: Mr
+                    email: Testing@gmail.com
+                    mobilePrefix: 852
+                    mobileNumber: 91234567
+                    password: string
+                    perferedLanguage: string
+                    facebookId: string
+                    gmailId: string
+                    wechatId: string
+                    deliveryAddress:
+                      - firstname: David
+                        lastname: Lee
+                        phonenum: '98998991'
+                        email: testingdelivery@gmail.com
+                        district: 'Eastern, Yau Tsim Mong'
+                        region: 'Wan Chai, Aberdeen'
+                        'room ': '09'
+                        floor: '22'
+                        block: A
+                        building: Super Building
+                        estate: Happy Estate
+                        street: Testing Street
+                        streetnum: '17'
+                        defaultAddress: false
+                    brithdayMonth: 1
+                    octopusNumber: 123456789
+                    homepassNumber: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                socialMediaID not found:
+                  value:
+                    fieldMessages:
+                      - field: socialMediaID
+                        message: >-
+                          The social media ID does not existed with the selected
+                          social media
+        '500':
+          description: Internal Server Error
+      description: Facebook/Google/(WeChat) to login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                socialMedia:
+                  type: string
+                  enum:
+                    - FB
+                    - WC
+                    - GO
+                  example: FB
+                  description: Facebook/Google/WeChat Login
+                socialMediaID:
+                  type: string
+                  example: o1jq3ojome
+                  description: socialMedia ID to be logined
+              required:
+                - socialMedia
+                - socialMediaID
+            examples:
+              Login by Facebook:
+                value:
+                  socialMedia: FB
+                  socialMediaID: o1jq3ojome
+        description: Use Facebook/Gmail/Wechat ID to login
+  /getJFunInfo:
+    get:
+      summary: Get JFun Information
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JFun'
+              examples:
+                example-1:
+                  value:
+                    id: jfun0001
+                    userId: JHC00001
+                    remainJFun: 300
+                    reservedJFun: 200
+                    JFunTransactions:
+                      - id: jfuntid0001
+                        date: '2019-08-24T14:15:22Z'
+                        operation: Add
+                        type: reward
+                        amount: '1500'
+                        orderID: orderid001
+                      - id: jfuntid0002
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Deduct
+                        type: transfer
+                        amount: '200'
+                        toUserID: JHC00003
+                      - id: jfuntid0003
+                        date: '2019-10-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        orderID: orderid001
+                      - id: jfuntid0004
+                        date: '2019-11-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        redeemProductId: '42233113'
+                      - id: jfuntid0005
+                        date: '2019-12-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '1000'
+                        redeemVoucherTypeId: '42233113'
+                      - id: jfuntid0006
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Add
+                        type: transfer
+                        amount: '300'
+                        fromUserID: JHC00003
+                    JFunDetail:
+                      - JFunDetailID: jdid0001
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '700'
+                        expiryDate: '2019-08-24T14:15:22Z'
+            application/xml:
+              schema:
+                type: object
+                properties: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User ID not existed:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: User ID not existed
+        '500':
+          description: Internal Server Error
+      operationId: Get JFun Information
+      description: Get the JFun Information using user ID
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: userId
+          description: User ID
+          required: true
+    parameters: []
+  /reserveJFun:
+    post:
+      summary: Reserve JFun
+      operationId: Reserve JFun
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JFun'
+              examples:
+                Updated JFun Information:
+                  value:
+                    id: jfun0001
+                    userId: JHC00001
+                    remainJFun: 300
+                    reservedJFun: 200
+                    JFunTransactions:
+                      - id: jfuntid0001
+                        date: '2019-08-24T14:15:22Z'
+                        operation: Add
+                        type: reward
+                        amount: '1500'
+                        orderID: orderid001
+                      - id: jfuntid0002
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Deduct
+                        type: transfer
+                        amount: '200'
+                        toUserID: JHC00003
+                      - id: jfuntid0003
+                        date: '2019-10-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        orderID: orderid001
+                      - id: jfuntid0004
+                        date: '2019-11-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        redeemProductId: '42233113'
+                      - id: jfuntid0005
+                        date: '2019-12-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '1000'
+                        redeemVoucherTypeId: '42233113'
+                      - id: jfuntid0006
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Add
+                        type: transfer
+                        amount: '300'
+                        fromUserID: JHC00003
+                    JFunDetail:
+                      - JFunDetailID: jdid0001
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '700'
+                        expiryDate: '2019-08-24T14:15:22Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User Not Found:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: userId not found
+                Insufficient JFun:
+                  value:
+                    fieldMessages:
+                      - field: amount
+                        message: Insufficient amount of JFun
+        '500':
+          description: Internal Server Error
+      description: Reserve JFun in cart page JFun redemption
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: User ID
+                  example: JHC00001
+                amount:
+                  type: number
+                  description: JFun amount to be reserved
+                  example: '300'
+              required:
+                - userId
+                - amount
+            examples:
+              example-1:
+                value:
+                  userId: JHC00001
+                  amount: 300
+  /releaseReservedJfun:
+    post:
+      summary: Release reserved JFun
+      operationId: Release reserved JFun
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JFun'
+              examples:
+                example-1:
+                  value:
+                    id: jfun0001
+                    userId: JHC00001
+                    remainJFun: 300
+                    reservedJFun: 200
+                    JFunTransactions:
+                      - id: jfuntid0001
+                        date: '2019-08-24T14:15:22Z'
+                        operation: Add
+                        type: reward
+                        amount: '1500'
+                        orderID: orderid001
+                      - id: jfuntid0002
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Deduct
+                        type: transfer
+                        amount: '200'
+                        toUserID: JHC00003
+                      - id: jfuntid0003
+                        date: '2019-10-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        orderID: orderid001
+                      - id: jfuntid0004
+                        date: '2019-11-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        redeemProductId: '42233113'
+                      - id: jfuntid0005
+                        date: '2019-12-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '1000'
+                        redeemVoucherTypeId: '42233113'
+                      - id: jfuntid0006
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Add
+                        type: transfer
+                        amount: '300'
+                        fromUserID: JHC00003
+                    JFunDetail:
+                      - JFunDetailID: jdid0001
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '700'
+                        expiryDate: '2019-08-24T14:15:22Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User not found:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: User ID not found
+                Insufficient JFun amount:
+                  value:
+                    fieldMessages:
+                      - field: amount
+                        message: JFun ammount insufficient
+        '500':
+          description: Internal Server Error
+      description: Release all reserved JFun
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: JHC00001
+                  description: user ID to release reserved JFun
+                amount:
+                  type: number
+                  description: >-
+                    amount of reserved JFun to be released, if not declare the
+                    amount, release all.
+                  example: 50
+              required:
+                - userId
+            examples:
+              Release All JFun:
+                value:
+                  userId: JHC00001
+              Release 50 JFun:
+                value:
+                  userId: JHC00001
+                  amount: 50
+  /transactJFun:
+    post:
+      summary: JFun Transaction
+      operationId: post-transactJFun
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JFun'
+              examples:
+                example-1:
+                  value:
+                    id: jfun0001
+                    userId: JHC00001
+                    remainJFun: 300
+                    reservedJFun: 200
+                    JFunTransactions:
+                      - id: jfuntid0001
+                        date: '2019-08-24T14:15:22Z'
+                        operation: Add
+                        type: reward
+                        amount: '1500'
+                        orderID: orderid001
+                      - id: jfuntid0002
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Deduct
+                        type: transfer
+                        amount: '200'
+                        toUserID: JHC00003
+                      - id: jfuntid0003
+                        date: '2019-10-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        orderID: orderid001
+                      - id: jfuntid0004
+                        date: '2019-11-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '150'
+                        redeemProductId: '42233113'
+                      - id: jfuntid0005
+                        date: '2019-12-30T14:15:22Z'
+                        operation: Deduct
+                        type: redeem
+                        amount: '1000'
+                        redeemVoucherTypeId: '42233113'
+                      - id: jfuntid0006
+                        date: '2019-10-24T14:15:22Z'
+                        operation: Add
+                        type: transfer
+                        amount: '300'
+                        fromUserID: JHC00003
+                    JFunDetail:
+                      - JFunDetailID: jdid0001
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '150'
+                        expiryDate: '2022-08-24T14:15:22Z'
+                      - JFunDetailID: jdid0002
+                        amount: '700'
+                        expiryDate: '2019-08-24T14:15:22Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User not existed:
+                  value:
+                    fieldMessages:
+                      - field: userID
+                        message: User ID not existed
+                Amount not enough:
+                  value:
+                    fieldMessages:
+                      - field: amount
+                        message: JFun amount not enough
+                Transfer User ID not existed:
+                  value:
+                    fieldMessages:
+                      - field: toUserID
+                        message: User Id not existed
+                Voucher Type ID not existed:
+                  value:
+                    fieldMessages:
+                      - field: VoucherTypeId
+                        message: Voucher Type ID not existed
+        '500':
+          description: Internal Server Error
+      description: Perform JFun transaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                  example: JHC00001
+                transaction:
+                  $ref: '#/components/schemas/JFunTransaction'
+                useReservedJFun:
+                  type: boolean
+                  default: false
+                  description: Deduct the JFun from reserved JFun or total amount
+              required:
+                - userID
+                - transaction
+                - useReservedJFun
+            examples:
+              JFun Reward from order:
+                value:
+                  userId: JHC00001
+                  transaction:
+                    operation: Add
+                    type: reward
+                    amount: 1500
+                    orderID: orderid001
+                  useReservedJFun: false
+              Transfer JFun to another user:
+                value:
+                  userId: JHC00001
+                  transaction:
+                    operation: Deduct
+                    type: transfer
+                    amount: 200
+                    toUserID: JHC00003
+                  useReservedJFun: false
+              Redeem JFun for order (Deduct reserved JFun):
+                value:
+                  userId: JHC00001
+                  transaction:
+                    operation: Deduct
+                    type: redeem
+                    amount: 150
+                    orderID: orderid001
+                  useReservedJFun: true
+              Redeem JFun for product:
+                value:
+                  userId: JHC00001
+                  transaction:
+                    operation: Deduct
+                    type: redeem
+                    amount: 150
+                    redeemProductId: '42233113'
+                  useReservedJFun: false
+              Redeem JFun for voucher:
+                value:
+                  userId: JHC00001
+                  transaction:
+                    operation: Deduct
+                    type: redeem
+                    amount: 1000
+                    redeemVoucherTypeId: '42233113'
+                  useReservedJFun: false
+  /getJFunRedemptionRatio:
+    get:
+      summary: Get JFun Redemption Ratio
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JFunRedemptionRatio'
+              examples:
+                example-1:
+                  value:
+                    - type: orderAmount
+                      jfunamount: '100'
+                      quantity: 10
+                      itemId: oa100
+                    - type: orderAmount
+                      jfunamount: '200'
+                      quantity: 20
+                      itemId: oa200
+                    - type: orderAmount
+                      jfunamount: '500'
+                      quantity: 50
+                      itemId: oa500
+                    - type: orderAmount
+                      jfunamount: '1000'
+                      quantity: 100
+                      itemId: oa1000
+                    - type: ecoupon
+                      jfunamount: '1000'
+                      quantity: 1
+                      itemId: ec001
+                    - type: ecoupon
+                      jfunamount: '2000'
+                      quantity: 1
+                      itemId: ec002
+        '500':
+          description: Internal Server Error
+      operationId: Get JFun Redemption Ratio
+      description: >-
+        Get JFun Redemption Ratio to display and maintain logic for JFun
+        redemption
+    parameters: []
+  /getCustomerVoucher:
+    get:
+      summary: Get Customer Voucher
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+              examples:
+                example-1:
+                  value:
+                    - id: v000001
+                      voucherTypeID: '11111111'
+                      expiryDate: '2019-08-24T14:15:22Z'
+                      isReserved: true
+                    - id: v000002
+                      voucherTypeID: '11111111'
+                      expiryDate: '2029-08-24T14:15:22Z'
+                      isReserved: false
+                    - id: v000003
+                      voucherTypeID: '49999999'
+                      expiryDate: '2025-08-24T14:15:22Z'
+                      isReserved: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User Not Found:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: User ID not existed
+        '500':
+          description: Internal Server Error
+      operationId: Get Customer Voucher
+      description: Get Customer Voucher
+      parameters:
+        - schema:
+            type: string
+            example: JHC00001
+          in: query
+          name: userID
+          description: User ID
+          required: true
+  /reserveVoucher:
+    post:
+      summary: Reserve Voucher
+      operationId: Reserve Voucher
+      responses:
+        '200':
+          description: 'Reserve vouchers success, return full list of the customer''s voucher'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+              examples:
+                example-1:
+                  value:
+                    - id: v000001
+                      voucherTypeID: '11111111'
+                      expiryDate: '2019-08-24T14:15:22Z'
+                      isReserved: true
+                    - id: v000002
+                      voucherTypeID: '11111111'
+                      expiryDate: '2029-08-24T14:15:22Z'
+                      isReserved: true
+                    - id: v000003
+                      voucherTypeID: '49999999'
+                      expiryDate: '2025-08-24T14:15:22Z'
+                      isReserved: false
+        '400':
+          description: 'Reserve vouchers fail, no vouchers have been reserved'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User Not Found:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: User ID not existed
+                Vouchers not valid:
+                  value:
+                    fieldMessages:
+                      - field: 'voucher[0]'
+                        message: Voucher not valid
+                      - field: 'voucher[1]'
+                        message: Voucher not valid
+            application/xml:
+              schema:
+                type: object
+                properties: {}
+      description: To reserve voucher in the checkout cart page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: JHC00001
+                  description: Customer who reserve vouchers
+                voucher:
+                  type: array
+                  description: List of the vouchers to be reserved
+                  items:
+                    $ref: '#/components/schemas/Voucher'
+              required:
+                - userId
+                - voucher
+            examples:
+              example-2:
+                value:
+                  voucher:
+                    - id: v000001
+                      voucherTypeID: '11111111'
+                    - id: v000002
+                      voucherTypeID: '99999999'
+                  userId: JHC00001
+        description: ''
+  /releaseVouchers:
+    post:
+      summary: Release Vouchers
+      operationId: Release Vouchers
+      responses:
+        '200':
+          description: 'Release vouchers success, return full list of the customer''s voucher'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+              examples:
+                example-1:
+                  value:
+                    - id: v000001
+                      voucherTypeID: '11111111'
+                      expiryDate: '2019-08-24T14:15:22Z'
+                      isReserved: false
+                    - id: v000002
+                      voucherTypeID: '11111111'
+                      expiryDate: '2029-08-24T14:15:22Z'
+                      isReserved: false
+                    - id: v000003
+                      voucherTypeID: '49999999'
+                      expiryDate: '2025-08-24T14:15:22Z'
+                      isReserved: false
+        '400':
+          description: 'Release fail, no vouchers have been released'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User Not Found:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: User ID not existed
+                Vouchers not valid:
+                  value:
+                    fieldMessages:
+                      - field: 'voucher[0]'
+                        message: Voucher not valid
+                      - field: 'voucher[1]'
+                        message: Voucher not valid
+        '500':
+          description: Internal Server Error
+      description: To release the reserved vouchers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: Customer ID
+                  example: JHC00001
+                vouchers:
+                  type: array
+                  description: Vouchers to be release
+                  items:
+                    $ref: '#/components/schemas/Voucher'
+              required:
+                - userId
+                - vouchers
+            examples:
+              example-1:
+                value:
+                  userId: JHC00001
+                  vouchers:
+                    - id: v000001
+                      voucherTypeID: '11111111'
+                    - id: v000002
+                      voucherTypeID: '99999999'
+        description: ''
+  /transactVouchers:
+    post:
+      summary: Transact Vouchers
+      operationId: Transact Vouchers
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+              examples:
+                Customer's updated voucher list:
+                  value:
+                    id: v000003
+                    voucherTypeID: '49999999'
+                    expiryDate: '2025-08-24T14:15:22Z'
+                    isReserved: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                User Not Existed:
+                  value:
+                    fieldMessages:
+                      - field: userId
+                        message: User ID not existed
+                Vouchers not valid:
+                  value:
+                    fieldMessages:
+                      - field: 'voucher[0]'
+                        message: Voucher not valid
+                      - field: 'voucher[1]'
+                        message: Voucher not valid
+        '500':
+          description: Internal Server Error
+      description: 'Transact Vouchers, only vouchers that marked reserved can be transact'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: User ID
+                  example: JHC00001
+                vouchers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Voucher'
+              required:
+                - userId
+                - vouchers
+            examples:
+              example-1:
+                value:
+                  userId: JHC00001
+                  vouchers:
+                    - id: v000001
+                      voucherTypeID: '11111111'
+                    - id: v000002
+                      voucherTypeID: '99999999'
+        description: ''
+    parameters: []
 components:
   schemas:
     User:
@@ -527,11 +1455,11 @@ components:
           email: Testing@gmail.com
           mobilePrefix: 852
           mobileNumber: 91234567
-          password: '3'
+          password: sdfgsdgfdshfdgntnt42twgvasdvbasv
           perferedLanguage: string
-          facebookId: string
-          gmaileId: string
-          wechatId: string
+          facebookId: FBID0001
+          gmailId: GOID0001
+          wechatId: WCID0001
           deliveryAddress:
             - firstname: David
               lastname: Lee
@@ -546,24 +1474,10 @@ components:
               estate: Happy Estate
               street: Testing Street
               streetnum: '17'
-              defaultAddress: true
-            - firstname: Tony
-              lastname: Wan
-              phonenum: '98998991'
-              email: testingdelivery@gmail.com
-              district: 'Eastern, Yau Tsim Mong'
-              region: 'Wan Chai, Aberdeen'
-              'room ': '22'
-              floor: '1'
-              block: C
-              building: Super Building2
-              estate: Happy Estate2
-              street: Testing Street2
-              streetnum: '12'
               defaultAddress: false
           brithdayMonth: 1
           octopusNumber: 123456789
-          homepassNumber: string
+          homepassNumber: '2421553523525'
       properties:
         id:
           type: string
@@ -605,17 +1519,21 @@ components:
         password:
           type: string
           description: Password encrypted by MD5
+          example: sdfgsdgfdshfdgntnt42twgvasdvbasv
         perferedLanguage:
           type: string
         facebookId:
           type: string
           description: For facebook login
+          example: FBID0001
         gmailId:
           type: string
           description: For gmail login
+          example: GOID0001
         wechatId:
           type: string
           description: For wechat login
+          example: WCID0001
         deliveryAddress:
           type: array
           items:
@@ -645,6 +1563,7 @@ components:
         homepassNumber:
           type: string
           description: To link with the physical Home Pass Card
+          example: '2421553523525'
       required:
         - id
         - firstName
@@ -720,4 +1639,236 @@ components:
                 type: string
               message:
                 type: string
+    JFun:
+      title: JFunInformation
+      type: object
+      description: JFun information
+      x-examples:
+        example-1:
+          id: JFun0001
+          userId: JHC00001
+          remainJFun: 0
+          reservedJFun: 0
+          JFunTransactions:
+            - id: JFuntid0001
+              date: '2019-08-24T14:15:22Z'
+              operation: Add
+              type: transfer
+              redeemProductId: string
+              amount: '100'
+              orderID: orderid001
+              '': string
+          JFunDetail:
+            - JFunDetailID: jdid0001
+              amount: '150'
+              expiryDate: '2019-08-24T14:15:22Z'
+        example-2:
+          id: JFun0001
+          userId: JHC00001
+          remainJFun: 0
+          reservedJFun: 0
+          JFunTransactions:
+            - id: jfuntid0001
+              date: '2019-08-24T14:15:22Z'
+              operation: Add
+              type: transfer
+              redeemProductId: string
+              amount: '100'
+              orderID: orderid001
+              '': string
+          JFunDetail:
+            - JFunDetailID: jdid0001
+              amount: '150'
+              expiryDate: '2019-08-24T14:15:22Z'
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the JFun information
+          example: jfun0001
+        userId:
+          type: string
+          description: userId to map with the User model
+          example: JHC00001
+        remainJFun:
+          type: number
+          description: Current JFun including the reserved JFun
+          example: 300
+          default: 0
+        reservedJFun:
+          type: number
+          default: 0
+          example: 200
+          description: Reserved JFun in cart page
+        JFunTransactions:
+          type: array
+          description: 'All '
+          items:
+            $ref: '#/components/schemas/JFunTransaction'
+        JFunDetail:
+          type: array
+          items:
+            $ref: '#/components/schemas/JFunDetail'
+      required:
+        - id
+        - userId
+        - reservedJFun
+        - JFunTransactions
+        - JFunDetail
+    JFunTransaction:
+      title: JFunTransactions
+      type: object
+      x-examples:
+        example-1:
+          id: jfuntid0001
+          date: '2019-08-24T14:15:22Z'
+          operation: Add
+          type: transfer
+          redeemProductId: '42233113'
+          amount: '100'
+          orderID: orderid001
+          redeemVoucherTypeId: voucher001
+          fromUserID: JHC00001
+          toUserID: JHC00003
+      properties:
+        id:
+          type: string
+          description: JFun transaction id
+          example: jfuntid0001
+        date:
+          type: string
+          format: date-time
+          description: transaction date
+        operation:
+          type: string
+          description: Add/Deduct
+          enum:
+            - Add
+            - Deduct
+          example: Add
+        type:
+          type: string
+          description: Type of the JFun transaction
+          enum:
+            - transfer
+            - reward
+            - redeem
+        redeemProductId:
+          type: string
+          description: Target redeemed product ID
+          example: '42233113'
+        amount:
+          example: '100'
+          description: JFun amount being transfered
+          type: number
+        orderID:
+          type: string
+          example: orderid001
+          description: Order ID for JFun reward from order
+        redeemVoucherTypeId:
+          type: string
+          description: Voucher type ID for redeeming voucher
+          example: voucher001
+        fromUserID:
+          type: string
+          description: User ID of JFun from user for transfer JFun
+          example: JHC00001
+        toUserID:
+          type: string
+          description: User ID of JFun to user for transfer JFun
+          example: JHC00003
+      required:
+        - id
+        - date
+        - operation
+        - type
+        - redeemProductId
+        - amount
+    JFunDetail:
+      title: JFunDetail
+      type: object
+      x-examples:
+        example-1:
+          JFunDetailID: jdid0001
+          amount: '150'
+          expiryDate: '2019-08-24T14:15:22Z'
+      properties:
+        JFunDetailID:
+          type: string
+          description: JFun Detail ID
+          example: jdid0001
+        amount:
+          description: JFun amount
+          example: '150'
+          type: number
+        expiryDate:
+          type: string
+          format: date-time
+          description: JFun expiry date
+      required:
+        - JFunDetailID
+        - amount
+        - expiryDate
+    Voucher:
+      title: Voucher
+      type: object
+      description: Voucher model
+      properties:
+        id:
+          type: string
+          description: Voucher ID
+          example: v000001
+        voucherTypeID:
+          type: string
+          example: '42233113'
+        expiryDate:
+          type: string
+          format: date-time
+        isReserved:
+          type: boolean
+          description: Is the voucher reserved in the cart page
+          default: false
+      required:
+        - id
+        - voucherTypeID
+        - expiryDate
+        - isReserved
+    JFunRedemptionRatio:
+      title: JFunRedemptionRatio
+      type: object
+      x-examples:
+        example-1:
+          type: voucher
+          jfunamount: '50'
+          quantity: 1
+          itemId: '1224201'
+      description: Items available to be redeempted by JFun
+      properties:
+        type:
+          type: string
+          enum:
+            - voucher
+            - ecoupon
+            - orderAmount
+          example: orderAmount
+          description: Redemption Ration Type
+        jfunamount:
+          description: How many JFun required for this redemption
+          example: '50'
+          type: number
+        quantity:
+          type: number
+          example: 1
+          description: Quantity for redemption
+        itemId:
+          type: string
+          example: '1224201'
+          description: >-
+            Voucher Type ID/Product ID, this ID is used to mapped with the
+            Voucher Model/Product Model in hybris.  In case of orderAmount, JHC
+            System may generate an internal ID, Hybris will not use it.
+      required:
+        - type
+        - jfunamount
+        - quantity
+        - itemId
   responses: {}
